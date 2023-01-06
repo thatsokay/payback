@@ -245,7 +245,7 @@ pub fn zero_sum_partitionings_4<'a>(set: Vec<&'a Debt>) -> Vec<Vec<Vec<&'a Debt>
         .collect()
 }
 
-pub fn zero_sum_partitionings_5<'a>(set: Vec<&'a Debt>) -> Vec<Vec<Vec<&'a Debt>>> {
+pub fn longest_zero_sum_partitionings<'a>(set: Vec<&'a Debt>) -> Vec<Vec<Vec<&'a Debt>>> {
     if set.is_empty() {
         return vec![vec![]];
     }
@@ -268,12 +268,11 @@ pub fn zero_sum_partitionings_5<'a>(set: Vec<&'a Debt>) -> Vec<Vec<Vec<&'a Debt>
                 }
             })
             .sum();
-        if subset_sum != 0 {
-            continue;
+        if subset_sum == 0 {
+            subset_bit_strings
+                .drain_filter(|subset_bit_string| *subset_bit_string & bit_string == bit_string);
+            zero_sum_subset_bit_strings.push(bit_string);
         }
-        subset_bit_strings
-            .drain_filter(|subset_bit_string| *subset_bit_string & bit_string == bit_string);
-        zero_sum_subset_bit_strings.push(bit_string);
     }
 
     if zero_sum_subset_bit_strings.is_empty() {
@@ -288,29 +287,32 @@ pub fn zero_sum_partitionings_5<'a>(set: Vec<&'a Debt>) -> Vec<Vec<Vec<&'a Debt>
         .find_map(|group| {
             let partitionings: Vec<_> = group
                 .iter()
-                .filter(|&&subset_set_bit_string| {
-                    let bit_strings: Vec<_> = zero_sum_subset_bit_strings
+                .filter_map(|&subset_set_bit_string| {
+                    let subset_bit_strings: Vec<_> = zero_sum_subset_bit_strings
                         .iter()
                         .enumerate()
                         .filter(|(index, _)| (subset_set_bit_string >> *index) & 1 == 1)
                         .map(|(_, &bit_string)| bit_string)
                         .collect();
-                    bit_strings.iter().sum::<u64>() == set_bit_string
-                        && bit_strings
+                    if subset_bit_strings.iter().sum::<u64>() == set_bit_string
+                        && subset_bit_strings
                             .iter()
                             .fold(0, |acc, bit_string| acc | bit_string)
                             == set_bit_string
+                    {
+                        Some(subset_bit_strings)
+                    } else {
+                        None
+                    }
                 })
-                .map(|subset_set_bit_string| {
-                    zero_sum_subset_bit_strings
-                        .iter()
-                        .enumerate()
-                        .filter(move |(i, _)| (subset_set_bit_string >> i) & 1 == 1)
-                        .map(|(_, &subset_bit_string)| {
+                .map(|subset_bit_strings| {
+                    subset_bit_strings
+                        .into_iter()
+                        .map(|subset_bit_string| {
                             println!("{:#010b} {}", subset_bit_string, subset_bit_string);
                             set.iter()
                                 .enumerate()
-                                .filter(|(j, _)| (subset_bit_string >> j) & 1 == 1)
+                                .filter(|(index, _)| (subset_bit_string >> index) & 1 == 1)
                                 .map(|(_, &partition)| partition)
                                 .collect::<Vec<_>>()
                         })
@@ -377,15 +379,40 @@ mod tests {
     }
 
     #[test]
-    fn test_zero_sum_partitionings_5() {
-        let set: Vec<_> = (0..11)
-            .map(|i| Debt {
-                name: ((i as u8 + 'a' as u8) as char).to_string(),
-                value: i - 5,
+    fn test_longest_zero_sum_partitionings_single_result() {
+        let length = 10;
+        let set: Vec<_> = (0..length)
+            .flat_map(|i| {
+                vec![
+                    Debt {
+                        name: ((i as u8 + 'a' as u8) as char).to_string(),
+                        value: 2_i32.pow(i),
+                    },
+                    Debt {
+                        name: ((i as u8 + length as u8 + 'a' as u8) as char).to_string(),
+                        value: -2_i32.pow(i),
+                    },
+                ]
             })
             .collect();
-        let partitionings = zero_sum_partitionings_5(set.iter().collect());
-        println!("{:?}", partitionings);
+        let partitionings = longest_zero_sum_partitionings(set.iter().collect());
         assert_eq!(partitionings.len(), 1);
+        assert_eq!(partitionings[0].len(), length as usize);
+    }
+
+    #[test]
+    fn test_longest_zero_sum_partitionings_with_multiple_results() {
+        let set: Vec<_> = [-6, -2, -1, 2, 3, 4]
+            .into_iter()
+            .enumerate()
+            .map(|(i, value)| Debt {
+                name: ((i as u8 + 'a' as u8) as char).to_string(),
+                value,
+            })
+            .collect();
+        let partitionings = longest_zero_sum_partitionings(set.iter().collect());
+        assert_eq!(partitionings.len(), 2);
+        assert_eq!(partitionings[0].len(), 2);
+        assert_eq!(partitionings[1].len(), 2);
     }
 }
