@@ -1,6 +1,5 @@
 use crate::partitionings::Debt;
 use std::cmp::Ordering;
-use std::collections::HashSet;
 
 #[derive(Debug)]
 pub struct Transaction {
@@ -9,7 +8,7 @@ pub struct Transaction {
     pub value: u32,
 }
 
-pub fn balance_debts(debts: &HashSet<&Debt>) -> Vec<Transaction> {
+pub fn balance_debts(debts: &[&Debt]) -> Vec<Transaction> {
     let debts_count = debts.len();
     if debts_count == 0 {
         return vec![];
@@ -67,7 +66,7 @@ mod tests {
                 value: 4,
             },
         ];
-        let partition: HashSet<_> = debts.iter().collect();
+        let partition: Vec<_> = debts.iter().collect();
         assert_eq!(balance_debts(&partition).len(), 2);
     }
 }
