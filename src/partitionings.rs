@@ -1,6 +1,4 @@
-use std::hash::Hash;
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Debt {
     pub name: String,
     pub value: i32,
