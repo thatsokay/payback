@@ -1,82 +1,171 @@
 #![feature(drain_filter)]
 #![feature(slice_group_by)]
 
-use console_log;
-use dioxus::prelude::*;
-use log::{debug, Level};
-
 pub mod partitionings;
 pub mod transactions;
 
+use console_log;
+use log::{debug, Level};
+use partitionings::*;
+use transactions::*;
+use web_sys::HtmlInputElement;
+use yew::prelude::*;
+
 fn main() {
     console_log::init_with_level(Level::Debug).expect("error initialising logger");
-    dioxus::web::launch(app);
+    yew::Renderer::<App>::new().render();
 }
 
-// https://github.com/DioxusLabs/dioxus/blob/master/examples/eval.rs
-fn app(cx: Scope) -> Element {
-    let name = use_state(&cx, String::new);
-    let dollars = use_state(&cx, String::new);
-    let cents = use_state(&cx, String::new);
-    // let eval = dioxus_desktop::use_eval(cx);
-    // let future: &UseRef<Option<EvalResult>> = use_ref(cx, || None);
-    // if future.read().is_some() {
-    //     let future_clone = future.clone();
-    //     cx.spawn(async move {
-    //         if let Some(fut) = future_clone.with_mut(|o| o.take()) {
-    //             println!("{:?}", fut.await)
-    //         }
-    //     });
-    // }
+#[function_component]
+fn App() -> Html {
+    let debts = use_state(Vec::<Debt>::new);
+    let partitioning_transactions = {
+        let debts = debts.clone();
+        use_memo(
+            |debts| {
+                longest_zero_sum_partitionings(debts)
+                    .into_iter()
+                    .map(|partitioning| {
+                        partitioning
+                            .into_iter()
+                            .flat_map(|partition| pay_credited(&partition))
+                            .collect::<Vec<_>>()
+                    })
+                    .collect::<Vec<_>>()
+            },
+            debts,
+        )
+    };
 
-    cx.render(rsx! {
-        div {
-            input {
-                placeholder: "Name",
-                value: "{name}",
-                oninput: move |e| name.set(e.value.clone()),
+    let debt_name = use_state(String::new);
+    let debt_value = use_state(String::new);
+
+    let name_oninput = {
+        let debt_name = debt_name.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            let value = input.value();
+            debt_name.set(value);
+        })
+    };
+
+    let value_oninput = {
+        let debt_value = debt_value.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            let value = input.value();
+            let valid = value.is_empty()
+                || value
+                    .chars()
+                    .all(|c| c.is_numeric() || c == '-' || c == '.');
+            if valid {
+                debt_value.set(value);
+            } else {
+                debt_value.set(debt_value.to_string());
             }
-            input {
-                placeholder: "$",
-                // r#type: "number",
-                // inputmode: "numeric",
-                value: "{dollars}",
-                oninput: move |e| {
-                    let new_value = e.value.clone();
-                    dollars.modify(|current| {
-                        debug!("\"{}\" -> \"{}\"", current, new_value);
-                        if new_value.is_empty() || new_value.parse::<i32>().is_ok() {
-                            new_value
-                        } else {
-                            current.clone()
+        })
+    };
+
+    let onsubmit = {
+        let debts = debts.clone();
+        let debt_name = debt_name.clone();
+        let debt_value = debt_value.clone();
+        Callback::from(move |e: SubmitEvent| {
+            e.prevent_default();
+            let value = (*debt_value)
+                .parse::<f64>()
+                .map(|float| -(float * 100.0).round() as i32);
+            if value.is_err() {
+                return;
+            }
+            let mut new_debts = (*debts).clone();
+            new_debts.push(Debt {
+                name: debt_name.to_string(),
+                value: value.unwrap(),
+            });
+            debts.set(new_debts);
+            debt_name.set(String::new());
+            debt_value.set(String::new());
+        })
+    };
+
+    let debts_list_items = {
+        let debts = debts.clone();
+        debts
+            .iter()
+            .map(|debt| {
+                html! {
+                    <li>
+                        {
+                            format!(
+                                "{}: {}${}.{:02}",
+                                debt.name,
+                                if debt.value <= 0 {""} else {"-"}, // Invert debt to display amount owed
+                                (debt.value / 100).abs(),
+                                (debt.value % 100).abs(),
+                            )
                         }
-                    })
-                },
-            }
-            input {
-                placeholder: "00",
-                // r#type: "number",
-                // inputmode: "numeric",
-                value: "{cents}",
-                oninput: move |e| {
-                    let new_value = e.value.clone();
-                    cents.modify(|current| {
-                        debug!("\"{}\" -> \"{}\"", current, new_value);
-                        if new_value.is_empty() || (new_value.len() <= 2 && new_value.parse::<i32>().is_ok()) {
-                            new_value
-                        } else {
-                            current.clone()
+                    </li>
+                }
+            })
+            .collect::<Html>()
+    };
+
+    let transactions_list_items = {
+        partitioning_transactions
+            .iter()
+            .enumerate()
+            .map(|(i, transactions)| {
+                html! {
+                    <div>
+                        <h2>{format!("Option {}", i + 1)}</h2>
+                        {transactions
+                            .iter()
+                            .map(|transaction| {
+                                html! {
+                                    <p>
+                                        {
+                                            format!(
+                                                "{} pays {} ${}.{:02}",
+                                                transaction.payer,
+                                                transaction.payee,
+                                                transaction.value / 100,
+                                                transaction.value % 100,
+                                            )
+                                        }
+                                    </p>
+                                }
+                            })
+                            .collect::<Html>()
                         }
-                    })
-                },
-            }
-            // button {
-            //     onclick: move |_| {
-            //         let fut = eval(script);
-            //         future.set(Some(fut));
-            //     },
-            //     "Execute"
-            // }
-        }
-    })
+                    </div>
+                }
+            })
+            .collect::<Html>()
+    };
+
+    html! {
+        <div>
+            <form
+                {onsubmit}
+            >
+                <input
+                    placeholder="Name"
+                    value={debt_name.to_string()}
+                    oninput={name_oninput}
+                />
+                <input
+                    placeholder="Balance"
+                    value={debt_value.to_string()}
+                    oninput={value_oninput}
+                    inputmode="decimal"
+                />
+                <button>
+                    {"Add debt"}
+                </button>
+            </form>
+            <ul>{debts_list_items}</ul>
+            <div>{transactions_list_items}</div>
+        </div>
+    }
 }

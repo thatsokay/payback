@@ -1,5 +1,5 @@
 [package]
-name = "payout-rs"
+name = "payout"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.68"
@@ -7,6 +7,12 @@ rust-version = "1.68"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dioxus = { version = "0.2.4", features = ["web"] }
+yew = { version = "0.20.0", features = ["csr"] }
 log = "0.4"
 console_log = { version = "0.2", features = ["color"] }
+
+[dependencies.web-sys]
+version = "0.3"
+features = [
+    "HtmlInputElement",
+]
