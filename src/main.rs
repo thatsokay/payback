@@ -1,15 +1,20 @@
 #![feature(drain_filter)]
 #![feature(slice_group_by)]
 
+mod components;
 pub mod partitionings;
+mod state;
 pub mod transactions;
 
 use console_log;
 use log::{debug, Level};
-use partitionings::*;
-use transactions::*;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
+
+use components::debt_input::DebtInput;
+use partitionings::{longest_zero_sum_partitionings, Debt};
+use state::{Action, State};
+use transactions::pay_credited;
 
 fn main() {
     console_log::init_with_level(Level::Debug).expect("error initialising logger");
@@ -18,9 +23,35 @@ fn main() {
 
 #[function_component]
 fn App() -> Html {
+    let state = use_reducer(|| State {
+        debts: vec![Debt::new()],
+    });
+
+    let onedit = {
+        let state = state.clone();
+        move |i: usize| {
+            let state = state.clone();
+            Callback::from(move |(name, value): (String, i32)| {
+                state.dispatch(Action::Edit((i, name, value)))
+            })
+        }
+    };
+
+    let onremove = {
+        let state = state.clone();
+        move |i: usize| {
+            let state = state.clone();
+            Callback::from(move |_| state.dispatch(Action::Remove(i)))
+        }
+    };
+
+    let onadd = {
+        let state = state.clone();
+        Callback::from(move |_| state.dispatch(Action::Add))
+    };
+
     let debts = use_state(Vec::<Debt>::new);
     let partitioning_transactions = {
-        let debts = debts.clone();
         use_memo(
             |debts| {
                 longest_zero_sum_partitionings(debts)
@@ -28,65 +59,13 @@ fn App() -> Html {
                     .map(|partitioning| {
                         partitioning
                             .into_iter()
-                            .flat_map(|partition| pay_credited(&partition))
+                            .flat_map(|partition| pay_credited(&partition).unwrap())
                             .collect::<Vec<_>>()
                     })
                     .collect::<Vec<_>>()
             },
-            debts,
+            state.debts.clone(),
         )
-    };
-
-    let debt_name = use_state(String::new);
-    let debt_value = use_state(String::new);
-
-    let name_oninput = {
-        let debt_name = debt_name.clone();
-        Callback::from(move |e: InputEvent| {
-            let input: HtmlInputElement = e.target_unchecked_into();
-            let value = input.value();
-            debt_name.set(value);
-        })
-    };
-
-    let value_oninput = {
-        let debt_value = debt_value.clone();
-        Callback::from(move |e: InputEvent| {
-            let input: HtmlInputElement = e.target_unchecked_into();
-            let value = input.value();
-            let valid = value.is_empty()
-                || value
-                    .chars()
-                    .all(|c| c.is_numeric() || c == '-' || c == '.');
-            if valid {
-                debt_value.set(value);
-            } else {
-                debt_value.set(debt_value.to_string());
-            }
-        })
-    };
-
-    let onsubmit = {
-        let debts = debts.clone();
-        let debt_name = debt_name.clone();
-        let debt_value = debt_value.clone();
-        Callback::from(move |e: SubmitEvent| {
-            e.prevent_default();
-            let value = (*debt_value)
-                .parse::<f64>()
-                .map(|float| -(float * 100.0).round() as i32);
-            if value.is_err() {
-                return;
-            }
-            let mut new_debts = (*debts).clone();
-            new_debts.push(Debt {
-                name: debt_name.to_string(),
-                value: value.unwrap(),
-            });
-            debts.set(new_debts);
-            debt_name.set(String::new());
-            debt_value.set(String::new());
-        })
     };
 
     let debts_list_items = {
@@ -146,24 +125,43 @@ fn App() -> Html {
 
     html! {
         <div>
-            <form
-                {onsubmit}
-            >
-                <input
-                    placeholder="Name"
-                    value={debt_name.to_string()}
-                    oninput={name_oninput}
-                />
-                <input
-                    placeholder="Balance"
-                    value={debt_value.to_string()}
-                    oninput={value_oninput}
-                    inputmode="decimal"
-                />
-                <button>
-                    {"Add debt"}
-                </button>
-            </form>
+            <div>
+                {
+                    (0..(state.debts.len()))
+                        .map(|i| {
+                            html! {
+                                <div key={i}>
+                                    <DebtInput onedit={onedit(i)} />
+                                    <button onclick={onremove(i)}>{"X"}</button>
+                                </div>
+                            }
+                        })
+                        .collect::<Html>()
+                }
+            </div>
+            <button onclick={onadd}>{"Add person"}</button>
+            <ul>
+                {
+                    state.debts
+                        .iter()
+                        .map(|debt| {
+                            html! {
+                                <li>
+                                    {
+                                        format!(
+                                            "{}: {}${}.{:02}",
+                                            debt.name,
+                                            if debt.value <= 0 {""} else {"-"}, // Invert debt to display amount owed
+                                            debt.value.abs() / 100,
+                                            debt.value.abs() % 100,
+                                        )
+                                    }
+                                </li>
+                            }
+                        })
+                        .collect::<Html>()
+                }
+            </ul>
             <ul>{debts_list_items}</ul>
             <div>{transactions_list_items}</div>
         </div>

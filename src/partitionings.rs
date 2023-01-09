@@ -4,6 +4,22 @@ pub struct Debt {
     pub value: i32,
 }
 
+impl Debt {
+    pub fn new() -> Self {
+        Self {
+            name: String::new(),
+            value: 0,
+        }
+    }
+
+    pub fn from(name: &str, value: i32) -> Self {
+        Self {
+            name: name.to_string(),
+            value,
+        }
+    }
+}
+
 pub fn longest_zero_sum_partitionings(set: &[Debt]) -> Vec<Vec<Vec<&Debt>>> {
     if set.is_empty() {
         return vec![vec![]];

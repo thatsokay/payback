@@ -1,6 +1,9 @@
-use crate::partitionings::Debt;
 use std::cmp::Ordering;
 use std::collections::VecDeque;
+use std::fmt;
+use std::result::Result;
+
+use crate::partitionings::Debt;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Transaction {
@@ -9,17 +12,25 @@ pub struct Transaction {
     pub value: i32,
 }
 
-pub fn pay_credited(debts: &[&Debt]) -> Vec<Transaction> {
-    if debts.is_empty() {
-        return vec![];
-    }
+#[derive(Debug, Clone)]
+pub struct BalanceError;
 
+impl fmt::Display for BalanceError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Debts do not sum to zero")
+    }
+}
+
+pub fn pay_credited(debts: &[&Debt]) -> Result<Vec<Transaction>, BalanceError> {
+    if debts.is_empty() {
+        return Ok(vec![]);
+    }
     let mut sorted_debts: VecDeque<_> = debts.iter().map(|&debt| debt.clone()).collect();
     sorted_debts
         .make_contiguous()
         .sort_by_key(|item| item.value);
     let mut transactions = vec![];
-    while !sorted_debts.is_empty() {
+    while sorted_debts.len() >= 2 {
         let mut creditor = sorted_debts.pop_front().unwrap();
         let mut debtor = sorted_debts.pop_back().unwrap();
         let mut transaction = Transaction {
@@ -47,12 +58,16 @@ pub fn pay_credited(debts: &[&Debt]) -> Vec<Transaction> {
             .make_contiguous()
             .sort_by_key(|item| item.value);
     }
-    transactions
+    if sorted_debts.is_empty() || sorted_debts[0].value == 0 {
+        Ok(transactions)
+    } else {
+        Err(BalanceError)
+    }
 }
 
-pub fn pay_debted(debts: &[&Debt]) -> Vec<Transaction> {
+pub fn pay_debted(debts: &[&Debt]) -> Result<Vec<Transaction>, BalanceError> {
     if debts.is_empty() {
-        return vec![];
+        return Ok(vec![]);
     }
     let mut sorted_debts: VecDeque<_> = debts.iter().map(|&debt| debt.clone()).collect();
     sorted_debts
@@ -87,7 +102,11 @@ pub fn pay_debted(debts: &[&Debt]) -> Vec<Transaction> {
             .make_contiguous()
             .sort_by_key(|item| item.value);
     }
-    transactions
+    if sorted_debts.is_empty() || sorted_debts[0].value == 0 {
+        Ok(transactions)
+    } else {
+        Err(BalanceError)
+    }
 }
 
 mod tests {
@@ -106,7 +125,7 @@ mod tests {
         let partition: Vec<_> = debts.iter().collect();
         let transactions = pay_credited(&partition);
         assert_eq!(
-            transactions,
+            transactions.unwrap(),
             [
                 Transaction {
                     payer: String::from("d"),
@@ -140,7 +159,7 @@ mod tests {
         let partition: Vec<_> = debts.iter().collect();
         let transactions = pay_debted(&partition);
         assert_eq!(
-            transactions,
+            transactions.unwrap(),
             [
                 Transaction {
                     payer: String::from("a"),
