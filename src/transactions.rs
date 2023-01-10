@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use std::fmt;
 use std::result::Result;
 
-use crate::partitionings::Debt;
+use crate::debt::Debt;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Transaction {

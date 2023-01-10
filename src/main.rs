@@ -2,6 +2,7 @@
 #![feature(slice_group_by)]
 
 mod components;
+pub mod debt;
 pub mod partitionings;
 mod state;
 pub mod transactions;
@@ -12,7 +13,8 @@ use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
 use components::debt_input::DebtInput;
-use partitionings::{longest_zero_sum_partitionings, Debt};
+use debt::Debt;
+use partitionings::longest_zero_sum_partitionings;
 use state::{Action, State};
 use transactions::pay_credited;
 
@@ -23,9 +25,7 @@ fn main() {
 
 #[function_component]
 fn App() -> Html {
-    let state = use_reducer(|| State {
-        debts: vec![Debt::new()],
-    });
+    let state = use_reducer(State::new);
 
     let onedit = {
         let state = state.clone();
@@ -53,8 +53,13 @@ fn App() -> Html {
     let debts = use_state(Vec::<Debt>::new);
     let partitioning_transactions = {
         use_memo(
-            |debts| {
-                longest_zero_sum_partitionings(debts)
+            |entries| {
+                let debts: Vec<_> = entries
+                    .clone()
+                    .into_iter()
+                    .map(|entry| entry.debt)
+                    .collect();
+                longest_zero_sum_partitionings(&debts)
                     .into_iter()
                     .map(|partitioning| {
                         partitioning
@@ -64,7 +69,7 @@ fn App() -> Html {
                     })
                     .collect::<Vec<_>>()
             },
-            state.debts.clone(),
+            state.entries.clone(),
         )
     };
 
@@ -126,40 +131,42 @@ fn App() -> Html {
     html! {
         <div>
             <div>
-                {
-                    (0..(state.debts.len()))
-                        .map(|i| {
-                            html! {
-                                <div key={i}>
-                                    <DebtInput onedit={onedit(i)} />
-                                    <button onclick={onremove(i)}>{"X"}</button>
-                                </div>
-                            }
-                        })
-                        .collect::<Html>()
+                {state
+                    .entries
+                    .iter()
+                    .enumerate()
+                    .map(|(i, entry)| {
+                        html! {
+                            <div key={entry.id}>
+                                <DebtInput onedit={onedit(i)} />
+                                <button onclick={onremove(i)}>{"X"}</button>
+                            </div>
+                        }
+                    })
+                    .collect::<Html>()
                 }
             </div>
             <button onclick={onadd}>{"Add person"}</button>
             <ul>
-                {
-                    state.debts
-                        .iter()
-                        .map(|debt| {
-                            html! {
-                                <li>
-                                    {
-                                        format!(
-                                            "{}: {}${}.{:02}",
-                                            debt.name,
-                                            if debt.value <= 0 {""} else {"-"}, // Invert debt to display amount owed
-                                            debt.value.abs() / 100,
-                                            debt.value.abs() % 100,
-                                        )
-                                    }
-                                </li>
-                            }
-                        })
-                        .collect::<Html>()
+                {state
+                    .entries
+                    .iter()
+                    .map(|entry| {
+                        html! {
+                            <li>
+                                {
+                                    format!(
+                                        "{}: {}${}.{:02}",
+                                        entry.debt.name,
+                                        if entry.debt.value <= 0 {""} else {"-"}, // Invert debt to display amount owed
+                                        entry.debt.value.abs() / 100,
+                                        entry.debt.value.abs() % 100,
+                                    )
+                                }
+                            </li>
+                        }
+                    })
+                    .collect::<Html>()
                 }
             </ul>
             <ul>{debts_list_items}</ul>

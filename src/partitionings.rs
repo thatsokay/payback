@@ -1,26 +1,9 @@
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Debt {
-    pub name: String,
-    pub value: i32,
-}
+use std::iter::Sum;
 
-impl Debt {
-    pub fn new() -> Self {
-        Self {
-            name: String::new(),
-            value: 0,
-        }
-    }
-
-    pub fn from(name: &str, value: i32) -> Self {
-        Self {
-            name: name.to_string(),
-            value,
-        }
-    }
-}
-
-pub fn longest_zero_sum_partitionings(set: &[Debt]) -> Vec<Vec<Vec<&Debt>>> {
+pub fn longest_zero_sum_partitionings<'a, T>(set: &'a [T]) -> Vec<Vec<Vec<&'a T>>>
+where
+    i32: Sum<&'a T>,
+{
     if set.is_empty() {
         return vec![vec![]];
     }
@@ -31,13 +14,8 @@ pub fn longest_zero_sum_partitionings(set: &[Debt]) -> Vec<Vec<Vec<&Debt>>> {
         let subset_sum: i32 = set
             .iter()
             .enumerate()
-            .map(|(index, item)| {
-                if (bit_string >> index) & 1 == 1 {
-                    item.value
-                } else {
-                    0
-                }
-            })
+            .filter(|(index, _)| (bit_string >> index) & 1 == 1)
+            .map(|(_, item)| item)
             .sum();
         if subset_sum == 0 {
             subset_bit_strings
@@ -109,18 +87,7 @@ mod tests {
     fn test_longest_zero_sum_partitionings_single_result() {
         let length = 10;
         let set: Vec<_> = (0..length)
-            .flat_map(|i| {
-                vec![
-                    Debt {
-                        name: ((i as u8 + 'a' as u8) as char).to_string(),
-                        value: 2_i32.pow(i),
-                    },
-                    Debt {
-                        name: ((i as u8 + length as u8 + 'a' as u8) as char).to_string(),
-                        value: -2_i32.pow(i),
-                    },
-                ]
-            })
+            .flat_map(|i| vec![2_i32.pow(i), -2_i32.pow(i)])
             .collect();
         let partitionings = longest_zero_sum_partitionings(&set);
         assert_eq!(partitionings.len(), 1);
@@ -129,15 +96,7 @@ mod tests {
 
     #[test]
     fn test_longest_zero_sum_partitionings_with_multiple_results() {
-        let set: Vec<_> = [-6, -2, -1, 2, 3, 4]
-            .into_iter()
-            .enumerate()
-            .map(|(i, value)| Debt {
-                name: ((i as u8 + 'a' as u8) as char).to_string(),
-                value,
-            })
-            .collect();
-        let partitionings = longest_zero_sum_partitionings(&set);
+        let partitionings = longest_zero_sum_partitionings(&[-6, -2, -1, 2, 3, 4]);
         assert_eq!(partitionings.len(), 2);
         assert_eq!(partitionings[0].len(), 2);
         assert_eq!(partitionings[1].len(), 2);
