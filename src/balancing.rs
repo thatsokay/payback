@@ -23,15 +23,15 @@ impl Transaction {
 }
 
 #[derive(Debug, Clone)]
-pub struct BalanceError;
+pub struct BalancingError;
 
-impl fmt::Display for BalanceError {
+impl fmt::Display for BalancingError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Debts do not sum to zero")
     }
 }
 
-pub fn transact_credited_amounts_desc(debts: &[&Debt]) -> Result<Vec<Transaction>, BalanceError> {
+pub fn transact_credited_amounts_desc(debts: &[&Debt]) -> Result<Vec<Transaction>, BalancingError> {
     if debts.is_empty() {
         return Ok(vec![]);
     }
@@ -71,11 +71,11 @@ pub fn transact_credited_amounts_desc(debts: &[&Debt]) -> Result<Vec<Transaction
     if sorted_debts.is_empty() || sorted_debts[0].value == 0 {
         Ok(transactions)
     } else {
-        Err(BalanceError)
+        Err(BalancingError)
     }
 }
 
-pub fn transact_debted_amounts_desc(debts: &[&Debt]) -> Result<Vec<Transaction>, BalanceError> {
+pub fn transact_debted_amounts_desc(debts: &[&Debt]) -> Result<Vec<Transaction>, BalancingError> {
     if debts.is_empty() {
         return Ok(vec![]);
     }
@@ -115,11 +115,11 @@ pub fn transact_debted_amounts_desc(debts: &[&Debt]) -> Result<Vec<Transaction>,
     if sorted_debts.is_empty() || sorted_debts[0].value == 0 {
         Ok(transactions)
     } else {
-        Err(BalanceError)
+        Err(BalancingError)
     }
 }
 
-pub fn transact_debted_amounts_asc(debts: &[&Debt]) -> Result<Vec<Transaction>, BalanceError> {
+pub fn transact_debted_amounts_asc(debts: &[&Debt]) -> Result<Vec<Transaction>, BalancingError> {
     if debts.is_empty() {
         return Ok(vec![]);
     }
@@ -162,8 +162,32 @@ pub fn transact_debted_amounts_asc(debts: &[&Debt]) -> Result<Vec<Transaction>, 
     if sorted_debts.is_empty() || sorted_debts[0].value == 0 {
         Ok(transactions)
     } else {
-        Err(BalanceError)
+        Err(BalancingError)
     }
+}
+
+pub fn transact_spoke_hub(debts: &[&Debt], hub_index: usize) -> Vec<Transaction> {
+    if debts.is_empty() {
+        return vec![];
+    }
+    let hub = debts[hub_index];
+    debts[..hub_index]
+        .iter()
+        .chain(debts[(hub_index + 1)..].iter())
+        .flat_map(|debt| match debt.value.cmp(&0) {
+            Ordering::Less => Some(Transaction {
+                payer: hub.name.clone(),
+                payee: debt.name.clone(),
+                value: -debt.value,
+            }),
+            Ordering::Greater => Some(Transaction {
+                payer: debt.name.clone(),
+                payee: hub.name.clone(),
+                value: debt.value,
+            }),
+            _ => None,
+        })
+        .collect()
 }
 
 mod tests {
@@ -239,6 +263,32 @@ mod tests {
                 Transaction::from("g", "h", 1170),
                 Transaction::from("c", "h", 1090),
                 Transaction::from("d", "h", 1000),
+            ]
+        )
+    }
+
+    #[test]
+    fn test_transact_spoke_hub() {
+        let debts: Vec<_> = [4000, 2000, 1090, 1000, -1080, -1340, -2410, -3260]
+            .into_iter()
+            .enumerate()
+            .map(|(i, value)| Debt {
+                name: (('a' as u8 + i as u8) as char).to_string(),
+                value,
+            })
+            .collect();
+        let partition: Vec<_> = debts.iter().collect();
+        let transactions = transact_spoke_hub(&partition, 6);
+        assert_eq!(
+            transactions,
+            [
+                Transaction::from("a", "g", 4000),
+                Transaction::from("b", "g", 2000),
+                Transaction::from("c", "g", 1090),
+                Transaction::from("d", "g", 1000),
+                Transaction::from("g", "e", 1080),
+                Transaction::from("g", "f", 1340),
+                Transaction::from("g", "h", 3260),
             ]
         )
     }
