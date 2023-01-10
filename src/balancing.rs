@@ -12,6 +12,16 @@ pub struct Transaction {
     pub value: i32,
 }
 
+impl Transaction {
+    pub fn from(payer: &str, payee: &str, value: i32) -> Self {
+        Self {
+            payer: payer.to_string(),
+            payee: payee.to_string(),
+            value,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct BalanceError;
 
@@ -174,21 +184,9 @@ mod tests {
         assert_eq!(
             transactions.unwrap(),
             [
-                Transaction {
-                    payer: String::from("d"),
-                    payee: String::from("a"),
-                    value: 4,
-                },
-                Transaction {
-                    payer: String::from("c"),
-                    payee: String::from("a"),
-                    value: 2,
-                },
-                Transaction {
-                    payer: String::from("c"),
-                    payee: String::from("b"),
-                    value: 1,
-                },
+                Transaction::from("d", "a", 4),
+                Transaction::from("c", "a", 2),
+                Transaction::from("c", "b", 1),
             ]
         );
     }
@@ -208,41 +206,13 @@ mod tests {
         assert_eq!(
             transactions.unwrap(),
             [
-                Transaction {
-                    payer: String::from("a"),
-                    payee: String::from("h"),
-                    value: 4000,
-                },
-                Transaction {
-                    payer: String::from("b"),
-                    payee: String::from("g"),
-                    value: 2000,
-                },
-                Transaction {
-                    payer: String::from("c"),
-                    payee: String::from("f"),
-                    value: 1090,
-                },
-                Transaction {
-                    payer: String::from("d"),
-                    payee: String::from("e"),
-                    value: 1000,
-                },
-                Transaction {
-                    payer: String::from("h"),
-                    payee: String::from("g"),
-                    value: 740,
-                },
-                Transaction {
-                    payer: String::from("g"),
-                    payee: String::from("f"),
-                    value: 330,
-                },
-                Transaction {
-                    payer: String::from("f"),
-                    payee: String::from("e"),
-                    value: 80,
-                },
+                Transaction::from("a", "h", 4000),
+                Transaction::from("b", "g", 2000),
+                Transaction::from("c", "f", 1090),
+                Transaction::from("d", "e", 1000),
+                Transaction::from("h", "g", 740),
+                Transaction::from("g", "f", 330),
+                Transaction::from("f", "e", 80),
             ]
         )
     }
@@ -262,41 +232,13 @@ mod tests {
         assert_eq!(
             transactions.unwrap(),
             [
-                Transaction {
-                    payer: String::from("a"),
-                    payee: String::from("e"),
-                    value: 4000,
-                },
-                Transaction {
-                    payer: String::from("e"),
-                    payee: String::from("f"),
-                    value: 2920,
-                },
-                Transaction {
-                    payer: String::from("b"),
-                    payee: String::from("g"),
-                    value: 2000,
-                },
-                Transaction {
-                    payer: String::from("f"),
-                    payee: String::from("g"),
-                    value: 1580,
-                },
-                Transaction {
-                    payer: String::from("g"),
-                    payee: String::from("h"),
-                    value: 1170,
-                },
-                Transaction {
-                    payer: String::from("c"),
-                    payee: String::from("h"),
-                    value: 1090,
-                },
-                Transaction {
-                    payer: String::from("d"),
-                    payee: String::from("h"),
-                    value: 1000,
-                },
+                Transaction::from("a", "e", 4000),
+                Transaction::from("e", "f", 2920),
+                Transaction::from("b", "g", 2000),
+                Transaction::from("f", "g", 1580),
+                Transaction::from("g", "h", 1170),
+                Transaction::from("c", "h", 1090),
+                Transaction::from("d", "h", 1000),
             ]
         )
     }
