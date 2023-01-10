@@ -1,22 +1,22 @@
 #![feature(drain_filter)]
 #![feature(slice_group_by)]
 
+pub mod balancing;
 mod components;
 pub mod debt;
 pub mod partitionings;
 mod state;
-pub mod transactions;
 
 use console_log;
 use log::{debug, Level};
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
+use balancing::transact_debted_amounts_asc;
 use components::debt_input::DebtInput;
 use debt::Debt;
 use partitionings::longest_zero_sum_partitionings;
 use state::{Action, State};
-use transactions::pay_credited;
 
 fn main() {
     console_log::init_with_level(Level::Debug).expect("error initialising logger");
@@ -64,7 +64,7 @@ fn App() -> Html {
                     .map(|partitioning| {
                         partitioning
                             .into_iter()
-                            .flat_map(|partition| pay_credited(&partition).unwrap())
+                            .flat_map(|partition| transact_debted_amounts_asc(&partition).unwrap())
                             .collect::<Vec<_>>()
                     })
                     .collect::<Vec<_>>()
