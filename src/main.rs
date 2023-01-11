@@ -8,13 +8,11 @@ pub mod partitionings;
 mod state;
 
 use console_log;
-use log::{debug, Level};
-use web_sys::HtmlInputElement;
+use log::Level;
 use yew::prelude::*;
 
-use balancing::transact_debted_amounts_asc;
+use balancing::balance_by_debted_amounts_asc;
 use components::debt_input::DebtInput;
-use debt::Debt;
 use partitionings::longest_zero_sum_partitionings;
 use state::{Action, State};
 
@@ -23,8 +21,8 @@ fn main() {
     yew::Renderer::<App>::new().render();
 }
 
-#[function_component]
-fn App() -> Html {
+#[function_component(App)]
+fn app() -> Html {
     let state = use_reducer(State::new);
 
     let onedit = {
@@ -50,7 +48,6 @@ fn App() -> Html {
         Callback::from(move |_| state.dispatch(Action::Add))
     };
 
-    let debts = use_state(Vec::<Debt>::new);
     let partitioning_transactions = {
         use_memo(
             |entries| {
@@ -64,35 +61,15 @@ fn App() -> Html {
                     .map(|partitioning| {
                         partitioning
                             .into_iter()
-                            .flat_map(|partition| transact_debted_amounts_asc(&partition).unwrap())
+                            .flat_map(|partition| {
+                                balance_by_debted_amounts_asc(&partition).unwrap()
+                            })
                             .collect::<Vec<_>>()
                     })
                     .collect::<Vec<_>>()
             },
             state.entries.clone(),
         )
-    };
-
-    let debts_list_items = {
-        let debts = debts.clone();
-        debts
-            .iter()
-            .map(|debt| {
-                html! {
-                    <li>
-                        {
-                            format!(
-                                "{}: {}${}.{:02}",
-                                debt.name,
-                                if debt.value <= 0 {""} else {"-"}, // Invert debt to display amount owed
-                                (debt.value / 100).abs(),
-                                (debt.value % 100).abs(),
-                            )
-                        }
-                    </li>
-                }
-            })
-            .collect::<Html>()
     };
 
     let transactions_list_items = {
@@ -108,15 +85,13 @@ fn App() -> Html {
                             .map(|transaction| {
                                 html! {
                                     <p>
-                                        {
-                                            format!(
-                                                "{} pays {} ${}.{:02}",
-                                                transaction.payer,
-                                                transaction.payee,
-                                                transaction.value / 100,
-                                                transaction.value % 100,
-                                            )
-                                        }
+                                        {format!(
+                                            "{} pays {} ${}.{:02}",
+                                            transaction.source,
+                                            transaction.destination,
+                                            transaction.value / 100,
+                                            transaction.value % 100,
+                                        )}
                                     </p>
                                 }
                             })
@@ -147,30 +122,7 @@ fn App() -> Html {
                 }
             </div>
             <button onclick={onadd}>{"Add person"}</button>
-            <ul>
-                {state
-                    .entries
-                    .iter()
-                    .map(|entry| {
-                        html! {
-                            <li>
-                                {
-                                    format!(
-                                        "{}: {}${}.{:02}",
-                                        entry.debt.name,
-                                        if entry.debt.value <= 0 {""} else {"-"}, // Invert debt to display amount owed
-                                        entry.debt.value.abs() / 100,
-                                        entry.debt.value.abs() % 100,
-                                    )
-                                }
-                            </li>
-                        }
-                    })
-                    .collect::<Html>()
-                }
-            </ul>
-            <ul>{debts_list_items}</ul>
-            <div>{transactions_list_items}</div>
+            {transactions_list_items}
         </div>
     }
 }

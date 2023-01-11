@@ -7,16 +7,16 @@ use crate::debt::Debt;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Transaction {
-    pub payer: String,
-    pub payee: String,
-    pub value: i32,
+    pub source: String,
+    pub destination: String,
+    pub value: u32,
 }
 
 impl Transaction {
-    pub fn from(payer: &str, payee: &str, value: i32) -> Self {
+    pub fn from(payer: &str, payee: &str, value: u32) -> Self {
         Self {
-            payer: payer.to_string(),
-            payee: payee.to_string(),
+            source: payer.to_string(),
+            destination: payee.to_string(),
             value,
         }
     }
@@ -31,7 +31,9 @@ impl fmt::Display for BalancingError {
     }
 }
 
-pub fn transact_credited_amounts_desc(debts: &[&Debt]) -> Result<Vec<Transaction>, BalancingError> {
+pub fn balance_by_credited_amounts_desc(
+    debts: &[&Debt],
+) -> Result<Vec<Transaction>, BalancingError> {
     if debts.is_empty() {
         return Ok(vec![]);
     }
@@ -44,21 +46,21 @@ pub fn transact_credited_amounts_desc(debts: &[&Debt]) -> Result<Vec<Transaction
         let mut creditor = sorted_debts.pop_front().unwrap();
         let mut debtor = sorted_debts.pop_back().unwrap();
         let mut transaction = Transaction {
-            payer: debtor.name.clone(),
-            payee: creditor.name.clone(),
+            source: debtor.name.clone(),
+            destination: creditor.name.clone(),
             value: 0,
         };
         match creditor.value.abs().cmp(&debtor.value) {
             Ordering::Less => {
-                transaction.value = -creditor.value;
+                transaction.value = (-creditor.value) as u32;
                 debtor.value += creditor.value;
                 sorted_debts.push_back(debtor);
             }
             Ordering::Equal => {
-                transaction.value = debtor.value;
+                transaction.value = debtor.value as u32;
             }
             Ordering::Greater => {
-                transaction.value = debtor.value;
+                transaction.value = debtor.value as u32;
                 creditor.value += debtor.value;
                 sorted_debts.push_front(creditor);
             }
@@ -75,7 +77,7 @@ pub fn transact_credited_amounts_desc(debts: &[&Debt]) -> Result<Vec<Transaction
     }
 }
 
-pub fn transact_debted_amounts_desc(debts: &[&Debt]) -> Result<Vec<Transaction>, BalancingError> {
+pub fn balance_by_debted_amounts_desc(debts: &[&Debt]) -> Result<Vec<Transaction>, BalancingError> {
     if debts.is_empty() {
         return Ok(vec![]);
     }
@@ -88,21 +90,21 @@ pub fn transact_debted_amounts_desc(debts: &[&Debt]) -> Result<Vec<Transaction>,
         let mut creditor = sorted_debts.pop_front().unwrap();
         let debtor = sorted_debts.pop_back().unwrap();
         let mut transaction = Transaction {
-            payer: debtor.name.clone(),
-            payee: creditor.name.clone(),
+            source: debtor.name.clone(),
+            destination: creditor.name.clone(),
             value: 0,
         };
         match creditor.value.abs().cmp(&debtor.value) {
             Ordering::Less => {
-                transaction.value = debtor.value;
+                transaction.value = debtor.value as u32;
                 creditor.value += debtor.value;
                 sorted_debts.push_back(creditor);
             }
             Ordering::Equal => {
-                transaction.value = debtor.value;
+                transaction.value = debtor.value as u32;
             }
             Ordering::Greater => {
-                transaction.value = debtor.value;
+                transaction.value = debtor.value as u32;
                 creditor.value += debtor.value;
                 sorted_debts.push_back(creditor);
             }
@@ -119,7 +121,7 @@ pub fn transact_debted_amounts_desc(debts: &[&Debt]) -> Result<Vec<Transaction>,
     }
 }
 
-pub fn transact_debted_amounts_asc(debts: &[&Debt]) -> Result<Vec<Transaction>, BalancingError> {
+pub fn balance_by_debted_amounts_asc(debts: &[&Debt]) -> Result<Vec<Transaction>, BalancingError> {
     if debts.is_empty() {
         return Ok(vec![]);
     }
@@ -137,21 +139,21 @@ pub fn transact_debted_amounts_asc(debts: &[&Debt]) -> Result<Vec<Transaction>, 
         let mut creditor = sorted_debts.pop_front().unwrap();
         let debtor = sorted_debts.pop_back().unwrap();
         let mut transaction = Transaction {
-            payer: debtor.name.clone(),
-            payee: creditor.name.clone(),
+            source: debtor.name.clone(),
+            destination: creditor.name.clone(),
             value: 0,
         };
         match creditor.value.abs().cmp(&debtor.value) {
             Ordering::Less => {
-                transaction.value = debtor.value;
+                transaction.value = debtor.value as u32;
                 creditor.value += debtor.value;
                 sorted_debts.push_back(creditor);
             }
             Ordering::Equal => {
-                transaction.value = debtor.value;
+                transaction.value = debtor.value as u32;
             }
             Ordering::Greater => {
-                transaction.value = debtor.value;
+                transaction.value = debtor.value as u32;
                 creditor.value += debtor.value;
                 sorted_debts.push_back(creditor);
             }
@@ -166,7 +168,7 @@ pub fn transact_debted_amounts_asc(debts: &[&Debt]) -> Result<Vec<Transaction>, 
     }
 }
 
-pub fn transact_spoke_hub(debts: &[&Debt], hub_index: usize) -> Vec<Transaction> {
+pub fn balance_by_spoke_hub(debts: &[&Debt], hub_index: usize) -> Vec<Transaction> {
     if debts.is_empty() {
         return vec![];
     }
@@ -176,14 +178,14 @@ pub fn transact_spoke_hub(debts: &[&Debt], hub_index: usize) -> Vec<Transaction>
         .chain(debts[(hub_index + 1)..].iter())
         .flat_map(|debt| match debt.value.cmp(&0) {
             Ordering::Less => Some(Transaction {
-                payer: hub.name.clone(),
-                payee: debt.name.clone(),
-                value: -debt.value,
+                source: hub.name.clone(),
+                destination: debt.name.clone(),
+                value: (-debt.value) as u32,
             }),
             Ordering::Greater => Some(Transaction {
-                payer: debt.name.clone(),
-                payee: hub.name.clone(),
-                value: debt.value,
+                source: debt.name.clone(),
+                destination: hub.name.clone(),
+                value: debt.value as u32,
             }),
             _ => None,
         })
@@ -194,7 +196,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_transact_credited_amounts_desc() {
+    fn test_balance_by_credited_amounts_desc() {
         let debts: Vec<_> = [-6, -1, 3, 4]
             .into_iter()
             .enumerate()
@@ -204,7 +206,7 @@ mod tests {
             })
             .collect();
         let partition: Vec<_> = debts.iter().collect();
-        let transactions = transact_credited_amounts_desc(&partition);
+        let transactions = balance_by_credited_amounts_desc(&partition);
         assert_eq!(
             transactions.unwrap(),
             [
@@ -216,7 +218,7 @@ mod tests {
     }
 
     #[test]
-    fn test_transact_debted_amounts_desc() {
+    fn test_balance_by_debted_amounts_desc() {
         let debts: Vec<_> = [4000, 2000, 1090, 1000, -1080, -1340, -2410, -3260]
             .into_iter()
             .enumerate()
@@ -226,7 +228,7 @@ mod tests {
             })
             .collect();
         let partition: Vec<_> = debts.iter().collect();
-        let transactions = transact_debted_amounts_desc(&partition);
+        let transactions = balance_by_debted_amounts_desc(&partition);
         assert_eq!(
             transactions.unwrap(),
             [
@@ -242,7 +244,7 @@ mod tests {
     }
 
     #[test]
-    fn test_transact_debted_amounts_asc() {
+    fn test_balance_by_debted_amounts_asc() {
         let debts: Vec<_> = [4000, 2000, 1090, 1000, -1080, -1340, -2410, -3260]
             .into_iter()
             .enumerate()
@@ -252,7 +254,7 @@ mod tests {
             })
             .collect();
         let partition: Vec<_> = debts.iter().collect();
-        let transactions = transact_debted_amounts_asc(&partition);
+        let transactions = balance_by_debted_amounts_asc(&partition);
         assert_eq!(
             transactions.unwrap(),
             [
@@ -268,7 +270,7 @@ mod tests {
     }
 
     #[test]
-    fn test_transact_spoke_hub() {
+    fn test_balance_by_spoke_hub() {
         let debts: Vec<_> = [4000, 2000, 1090, 1000, -1080, -1340, -2410, -3260]
             .into_iter()
             .enumerate()
@@ -278,7 +280,7 @@ mod tests {
             })
             .collect();
         let partition: Vec<_> = debts.iter().collect();
-        let transactions = transact_spoke_hub(&partition, 6);
+        let transactions = balance_by_spoke_hub(&partition, 6);
         assert_eq!(
             transactions,
             [
