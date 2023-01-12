@@ -138,27 +138,22 @@ pub fn balance_by_debted_amounts_asc(debts: &[&Debt]) -> Result<Vec<Transaction>
     while sorted_debts.len() >= 2 {
         let mut creditor = sorted_debts.pop_front().unwrap();
         let debtor = sorted_debts.pop_back().unwrap();
-        let mut transaction = Transaction {
+        transactions.push(Transaction {
             source: debtor.name.clone(),
             destination: creditor.name.clone(),
-            value: 0,
-        };
-        match creditor.value.abs().cmp(&debtor.value) {
+            value: debtor.value as u32,
+        });
+        match (debtor.value + creditor.value).cmp(&0) {
             Ordering::Less => {
-                transaction.value = debtor.value as u32;
                 creditor.value += debtor.value;
-                sorted_debts.push_back(creditor);
+                sorted_debts.push_front(creditor);
             }
-            Ordering::Equal => {
-                transaction.value = debtor.value as u32;
-            }
+            Ordering::Equal => {}
             Ordering::Greater => {
-                transaction.value = debtor.value as u32;
                 creditor.value += debtor.value;
                 sorted_debts.push_back(creditor);
             }
         }
-        transactions.push(transaction);
         sorted_debts.make_contiguous().sort_by(debt_sorter);
     }
     if sorted_debts.is_empty() || sorted_debts[0].value == 0 {
