@@ -61,9 +61,7 @@ fn app() -> Html {
                     .map(|partitioning| {
                         partitioning
                             .into_iter()
-                            .flat_map(|partition| {
-                                balance_by_debted_amounts_asc(&partition).unwrap()
-                            })
+                            .flat_map(|partition| balance_by_debted_amounts_asc(&partition))
                             .collect::<Vec<_>>()
                     })
                     .collect::<Vec<_>>()

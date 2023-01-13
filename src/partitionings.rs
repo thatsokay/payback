@@ -31,7 +31,7 @@ where
     let mut subset_set_bit_strings: Vec<_> =
         (1..2_u64.pow(zero_sum_subset_bit_strings.len() as u32)).collect();
     subset_set_bit_strings.sort_by_key(|item| item.count_zeros());
-    let longest_partitionings = subset_set_bit_strings
+    subset_set_bit_strings
         .group_by(|a, b| a.count_zeros() == b.count_zeros())
         .find_map(|group| {
             let partitionings: Vec<_> = group
@@ -72,11 +72,8 @@ where
             } else {
                 Some(partitionings)
             }
-        });
-    match longest_partitionings {
-        None => vec![],
-        Some(partitionings) => partitionings,
-    }
+        })
+        .unwrap_or(vec![])
 }
 
 #[cfg(test)]
