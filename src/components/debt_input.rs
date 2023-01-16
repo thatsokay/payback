@@ -21,46 +21,36 @@ pub struct DebtInputProps {
 
 #[function_component(DebtInput)]
 pub fn debt_input(props: &DebtInputProps) -> Html {
-    let name = use_state(String::new);
-    let value = use_state(String::new);
-
-    let name_onchange = {
-        let name = name.clone();
-        move |e: Event| {
-            let input: HtmlInputElement = e.target_unchecked_into();
-            name.set(input.value());
-        }
-    };
-
-    let value_onchange = {
-        let value = value.clone();
-        move |e: Event| {
-            let input: HtmlInputElement = e.target_unchecked_into();
-            value.set(input.value());
-        }
-    };
+    let name_input_ref = use_node_ref();
+    let value_input_ref = use_node_ref();
 
     let onsubmit = {
-        let name = name.clone();
-        let value = value.clone();
+        let name_input_ref = name_input_ref.clone();
+        let value_input_ref = value_input_ref.clone();
         let onedit = props.onedit.clone();
         move |e: SubmitEvent| {
             e.prevent_default();
+            let value_input = value_input_ref.cast::<HtmlInputElement>().unwrap();
+            let value = value_input.value();
             if let Ok((owed_cents, formatted)) = parse_and_format_dollar_value(&value) {
-                value.set(formatted);
-                onedit.emit((name.to_string(), -owed_cents));
+                let name = name_input_ref.cast::<HtmlInputElement>().unwrap().value();
+                value_input.set_value(&formatted);
+                onedit.emit((name, -owed_cents));
             }
         }
     };
 
     let onblur = {
-        let name = name.clone();
-        let value = value.clone();
+        let name_input_ref = name_input_ref.clone();
+        let value_input_ref = value_input_ref.clone();
         let onedit = props.onedit.clone();
         Callback::from(move |_: FocusEvent| {
+            let value_input = value_input_ref.cast::<HtmlInputElement>().unwrap();
+            let value = value_input.value();
             if let Ok((owed_cents, formatted)) = parse_and_format_dollar_value(&value) {
-                value.set(formatted);
-                onedit.emit((name.to_string(), -owed_cents));
+                let name = name_input_ref.cast::<HtmlInputElement>().unwrap().value();
+                value_input.set_value(&formatted);
+                onedit.emit((name, -owed_cents));
             }
         })
     };
@@ -68,18 +58,16 @@ pub fn debt_input(props: &DebtInputProps) -> Html {
     html! {
         <form {onsubmit}>
             <input
+                ref={name_input_ref}
                 placeholder="Name"
                 type="text"
-                value={name.to_string()}
-                onchange={name_onchange}
                 onblur={onblur.clone()}
             />
             {"$"}
             <input
+                ref={value_input_ref}
                 placeholder="Value"
                 inputmode="decimal"
-                value={value.to_string()}
-                onchange={value_onchange}
                 onblur={onblur.clone()}
             />
             <button hidden={true} /> // Hidden button to allow form submit.
