@@ -1,5 +1,18 @@
+use std::num::ParseFloatError;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
+
+fn parse_and_format_dollar_value(dollars: &str) -> Result<(i32, String), ParseFloatError> {
+    let parsed = dollars.parse::<f64>()?;
+    let cents = (parsed * 100.0).round() as i32;
+    let formatted = format!(
+        "{}{}.{:02}",
+        if cents < 0 { "-" } else { "" },
+        cents.abs() / 100,
+        cents.abs() % 100
+    );
+    Ok((cents, formatted))
+}
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct DebtInputProps {
@@ -33,15 +46,9 @@ pub fn debt_input(props: &DebtInputProps) -> Html {
         let onedit = props.onedit.clone();
         move |e: SubmitEvent| {
             e.prevent_default();
-            if let Ok(parsed) = value.parse::<f64>() {
-                let owed_value = (parsed * 100.0).round() as i32;
-                value.set(format!(
-                    "{}{}.{:02}",
-                    if owed_value < 0 { "-" } else { "" },
-                    owed_value.abs() / 100,
-                    owed_value.abs() % 100
-                ));
-                onedit.emit((name.to_string(), -owed_value));
+            if let Ok((owed_cents, formatted)) = parse_and_format_dollar_value(&value) {
+                value.set(formatted);
+                onedit.emit((name.to_string(), -owed_cents));
             }
         }
     };
@@ -51,15 +58,9 @@ pub fn debt_input(props: &DebtInputProps) -> Html {
         let value = value.clone();
         let onedit = props.onedit.clone();
         Callback::from(move |_: FocusEvent| {
-            if let Ok(parsed) = value.parse::<f64>() {
-                let owed_value = (parsed * 100.0).round() as i32;
-                value.set(format!(
-                    "{}{}.{:02}",
-                    if owed_value < 0 { "-" } else { "" },
-                    owed_value.abs() / 100,
-                    owed_value.abs() % 100
-                ));
-                onedit.emit((name.to_string(), -owed_value));
+            if let Ok((owed_cents, formatted)) = parse_and_format_dollar_value(&value) {
+                value.set(formatted);
+                onedit.emit((name.to_string(), -owed_cents));
             }
         })
     };
@@ -83,5 +84,65 @@ pub fn debt_input(props: &DebtInputProps) -> Html {
             />
             <button hidden={true} /> // Hidden button to allow form submit.
         </form>
+    }
+}
+
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_and_format_dollar_value() {
+        assert_eq!(
+            parse_and_format_dollar_value("9.99").unwrap(),
+            (999_i32, String::from("9.99"))
+        );
+    }
+
+    #[test]
+    fn test_parse_and_format_dollar_value_signed() {
+        assert_eq!(
+            parse_and_format_dollar_value("+9.99").unwrap(),
+            (999_i32, String::from("9.99"))
+        );
+        assert_eq!(
+            parse_and_format_dollar_value("-9.99").unwrap(),
+            (-999_i32, String::from("-9.99"))
+        );
+        assert_eq!(
+            parse_and_format_dollar_value("-0.01").unwrap(),
+            (-1_i32, String::from("-0.01"))
+        );
+    }
+
+    #[test]
+    fn test_parse_and_format_dollar_value_rounding() {
+        assert_eq!(
+            parse_and_format_dollar_value("9.9901").unwrap(),
+            (999_i32, String::from("9.99"))
+        );
+        assert_eq!(
+            parse_and_format_dollar_value("9.9999").unwrap(),
+            (1000_i32, String::from("10.00"))
+        );
+    }
+
+    #[test]
+    fn test_parse_and_format_dollar_value_truncated() {
+        assert_eq!(
+            parse_and_format_dollar_value("9").unwrap(),
+            (900_i32, String::from("9.00"))
+        );
+        assert_eq!(
+            parse_and_format_dollar_value("9.").unwrap(),
+            (900_i32, String::from("9.00"))
+        );
+        assert_eq!(
+            parse_and_format_dollar_value("9.0").unwrap(),
+            (900_i32, String::from("9.00"))
+        );
+        assert_eq!(
+            parse_and_format_dollar_value(".9").unwrap(),
+            (90_i32, String::from("0.90"))
+        );
     }
 }
