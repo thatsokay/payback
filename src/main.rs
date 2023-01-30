@@ -112,7 +112,7 @@ fn app() -> Html {
                     .map(|(i, entry)| {
                         html! {
                             <div class="entry" key={entry.id}>
-                                <DebtInput onedit={on_edit(i)} />
+                                <DebtInput id={entry.id} onedit={on_edit(i)} />
                                 <button onclick={on_remove(i)}>{"X"}</button>
                             </div>
                         }

@@ -16,6 +16,7 @@ fn parse_and_format_dollar_value(dollars: &str) -> Result<(i32, String), ParseFl
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct DebtInputProps {
+    pub id: usize,
     pub onedit: Callback<(String, i32)>,
 }
 
@@ -23,6 +24,16 @@ pub struct DebtInputProps {
 pub fn debt_input(props: &DebtInputProps) -> Html {
     let name_input_ref = use_node_ref();
     let value_input_ref = use_node_ref();
+
+    {
+        let name_input_ref = name_input_ref.clone();
+        use_effect_with_deps(
+            move |_| {
+                name_input_ref.cast::<HtmlInputElement>().unwrap().focus();
+            },
+            props.id,
+        );
+    }
 
     let onsubmit = {
         let name_input_ref = name_input_ref.clone();
@@ -56,7 +67,7 @@ pub fn debt_input(props: &DebtInputProps) -> Html {
     };
 
     html! {
-        <form class="debt-input" {onsubmit}>
+        <form class="debt-input" key={props.id} {onsubmit}>
             <input
                 class="debt-input--name"
                 ref={name_input_ref}
