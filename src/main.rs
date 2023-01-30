@@ -24,8 +24,9 @@ fn main() {
 #[function_component(App)]
 fn app() -> Html {
     let state = use_reducer(State::new);
+    let transaction_partitioning_index = use_state(|| 0);
 
-    let onedit = {
+    let on_edit = {
         let state = state.clone();
         move |i: usize| {
             let state = state.clone();
@@ -35,7 +36,7 @@ fn app() -> Html {
         }
     };
 
-    let onremove = {
+    let on_remove = {
         let state = state.clone();
         move |i: usize| {
             let state = state.clone();
@@ -43,64 +44,58 @@ fn app() -> Html {
         }
     };
 
-    let onadd = {
+    let on_add = {
         let state = state.clone();
         Callback::from(move |_| state.dispatch(Action::Add))
     };
 
-    let partitioning_transactions = {
-        use_memo(
-            |entries| {
-                let debts: Vec<_> = entries
-                    .clone()
-                    .into_iter()
-                    .map(|entry| entry.debt)
-                    .collect();
-                longest_zero_sum_partitionings(&debts)
-                    .into_iter()
-                    .map(|partitioning| {
-                        partitioning
-                            .into_iter()
-                            .flat_map(|partition| balance_by_debted_amounts_asc(&partition))
-                            .collect::<Vec<_>>()
-                    })
-                    .collect::<Vec<_>>()
-            },
-            state.entries.clone(),
-        )
+    let transaction_partitionings = use_memo(
+        |entries| {
+            let debts: Vec<_> = entries
+                .clone()
+                .into_iter()
+                .map(|entry| entry.debt)
+                .collect();
+            longest_zero_sum_partitionings(&debts)
+                .into_iter()
+                .map(|partitioning| {
+                    partitioning
+                        .into_iter()
+                        .flat_map(|partition| balance_by_debted_amounts_asc(&partition))
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>()
+        },
+        state.entries.clone(),
+    );
+    let transaction_partitioning = transaction_partitionings.get(*transaction_partitioning_index);
+
+    {
+        let transaction_partitioning_index = transaction_partitioning_index.clone();
+        let transaction_partitionings = transaction_partitionings.clone();
+        use_effect_with_deps(
+            move |_| transaction_partitioning_index.set(0),
+            transaction_partitionings,
+        );
+    }
+
+    let on_decrement_transaction_partitioning_index = {
+        let transaction_partitioning_index = transaction_partitioning_index.clone();
+        move |_| {
+            if *transaction_partitioning_index > 0 {
+                transaction_partitioning_index.set(*transaction_partitioning_index - 1);
+            }
+        }
     };
 
-    let transactions_list_items = {
-        partitioning_transactions
-            .iter()
-            .enumerate()
-            .map(|(i, transactions)| {
-                html! {
-                    <div>
-                        <h2>{format!("Option {}", i + 1)}</h2>
-                        <div class="transactions">
-                            {transactions
-                                .iter()
-                                .map(|transaction| {
-                                    html! {
-                                        <div class="transaction">
-                                            {format!(
-                                                "{} pays ${}.{:02} to {}",
-                                                transaction.source,
-                                                transaction.value / 100,
-                                                transaction.value % 100,
-                                                transaction.destination,
-                                            )}
-                                        </div>
-                                    }
-                                })
-                                .collect::<Html>()
-                            }
-                        </div>
-                    </div>
-                }
-            })
-            .collect::<Html>()
+    let on_increment_transaction_partitioning_index = {
+        let transaction_partitioning_index = transaction_partitioning_index.clone();
+        let transaction_partitionings = transaction_partitionings.clone();
+        move |_| {
+            if *transaction_partitioning_index < transaction_partitionings.len() - 1 {
+                transaction_partitioning_index.set(*transaction_partitioning_index + 1);
+            }
+        }
     };
 
     html! {
@@ -117,16 +112,44 @@ fn app() -> Html {
                     .map(|(i, entry)| {
                         html! {
                             <div class="entry" key={entry.id}>
-                                <DebtInput onedit={onedit(i)} />
-                                <button onclick={onremove(i)}>{"X"}</button>
+                                <DebtInput onedit={on_edit(i)} />
+                                <button onclick={on_remove(i)}>{"X"}</button>
                             </div>
                         }
                     })
                     .collect::<Html>()
                 }
             </div>
-            <button onclick={onadd}>{"Add person"}</button>
-            {transactions_list_items}
+            <button onclick={on_add}>{"Add person"}</button>
+            <div class="partitionings">
+                {html! {
+                    if let Some(transactions) = transaction_partitioning {
+                        if !transactions.is_empty() {
+                            <button onclick={on_decrement_transaction_partitioning_index}>{"<"}</button>
+                            <button onclick={on_increment_transaction_partitioning_index}>{">"}</button>
+                            <div class="transactions">
+                                {transactions
+                                    .iter()
+                                    .map(|transaction| {
+                                        html! {
+                                            <div class="transaction">
+                                                {format!(
+                                                    "{} pays ${}.{:02} to {}",
+                                                    transaction.source,
+                                                    transaction.value / 100,
+                                                    transaction.value % 100,
+                                                    transaction.destination,
+                                                )}
+                                            </div>
+                                        }
+                                    })
+                                    .collect::<Html>()
+                                }
+                            </div>
+                        }
+                    }
+                }}
+            </div>
         </div>
     }
 }
