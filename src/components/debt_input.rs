@@ -56,17 +56,19 @@ pub fn debt_input(props: &DebtInputProps) -> Html {
     };
 
     html! {
-        <form {onsubmit}>
+        <form class="debt-input" {onsubmit}>
             <input
+                class="debt-input--name"
                 ref={name_input_ref}
                 placeholder="Name"
-                type="text"
+                autocapitalize="on"
                 onblur={onblur.clone()}
             />
-            {"$"}
+            <span>{"$"}</span>
             <input
+                class="debt-input--value"
                 ref={value_input_ref}
-                placeholder="Value"
+                placeholder="0.00"
                 inputmode="decimal"
                 onblur={onblur.clone()}
             />

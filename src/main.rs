@@ -78,23 +78,25 @@ fn app() -> Html {
                 html! {
                     <div>
                         <h2>{format!("Option {}", i + 1)}</h2>
-                        {transactions
-                            .iter()
-                            .map(|transaction| {
-                                html! {
-                                    <p>
-                                        {format!(
-                                            "{} pays {} ${}.{:02}",
-                                            transaction.source,
-                                            transaction.destination,
-                                            transaction.value / 100,
-                                            transaction.value % 100,
-                                        )}
-                                    </p>
-                                }
-                            })
-                            .collect::<Html>()
-                        }
+                        <div class="transactions">
+                            {transactions
+                                .iter()
+                                .map(|transaction| {
+                                    html! {
+                                        <div class="transaction">
+                                            {format!(
+                                                "{} pays ${}.{:02} to {}",
+                                                transaction.source,
+                                                transaction.value / 100,
+                                                transaction.value % 100,
+                                                transaction.destination,
+                                            )}
+                                        </div>
+                                    }
+                                })
+                                .collect::<Html>()
+                            }
+                        </div>
                     </div>
                 }
             })
@@ -103,14 +105,18 @@ fn app() -> Html {
 
     html! {
         <div>
-            <div>
+            <div class="entries">
+                <label class="name-label">{"Name"}</label>
+                <div></div>
+                <label class="value-label">{"Amount owed"}</label>
+                <div></div>
                 {state
                     .entries
                     .iter()
                     .enumerate()
                     .map(|(i, entry)| {
                         html! {
-                            <div key={entry.id}>
+                            <div class="entry" key={entry.id}>
                                 <DebtInput onedit={onedit(i)} />
                                 <button onclick={onremove(i)}>{"X"}</button>
                             </div>
