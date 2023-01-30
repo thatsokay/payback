@@ -42,9 +42,12 @@ impl Reducible for State {
                 State { entries }.into()
             }
             Action::Remove(i) => {
-                entries.remove(i);
+                let removed = entries.remove(i);
                 if entries.is_empty() {
-                    entries.push(Default::default());
+                    entries.push(Entry {
+                        id: removed.id + 1,
+                        debt: Default::default(),
+                    });
                 }
                 State { entries }.into()
             }
