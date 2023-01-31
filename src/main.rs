@@ -124,29 +124,37 @@ fn app() -> Html {
             <div class="partitionings">
                 {html! {
                     if let Some(transactions) = transaction_partitioning {
-                        if !transactions.is_empty() {
-                            <button onclick={on_decrement_transaction_partitioning_index}>{"<"}</button>
-                            <button onclick={on_increment_transaction_partitioning_index}>{">"}</button>
-                            <div class="transactions">
-                                {transactions
-                                    .iter()
-                                    .map(|transaction| {
-                                        html! {
-                                            <div class="transaction">
-                                                {format!(
-                                                    "{} pays ${}.{:02} to {}",
-                                                    transaction.source,
-                                                    transaction.value / 100,
-                                                    transaction.value % 100,
-                                                    transaction.destination,
-                                                )}
-                                            </div>
-                                        }
-                                    })
-                                    .collect::<Html>()
-                                }
-                            </div>
+                        if transaction_partitionings.len() > 1 {
+                            <button
+                                onclick={on_decrement_transaction_partitioning_index}
+                            >
+                                {"<"}
+                            </button>
+                            <button
+                                onclick={on_increment_transaction_partitioning_index}
+                            >
+                                {">"}
+                            </button>
                         }
+                        <div class="transactions">
+                            {transactions
+                                .iter()
+                                .map(|transaction| {
+                                    html! {
+                                        <div class="transaction">
+                                            {format!(
+                                                "{} pays ${}.{:02} to {}",
+                                                transaction.source,
+                                                transaction.value / 100,
+                                                transaction.value % 100,
+                                                transaction.destination,
+                                            )}
+                                        </div>
+                                    }
+                                })
+                                .collect::<Html>()
+                            }
+                        </div>
                     }
                 }}
             </div>
