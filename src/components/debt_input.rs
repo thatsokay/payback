@@ -71,17 +71,19 @@ pub fn debt_input(props: &DebtInputProps) -> Html {
             <input
                 class="debt-input--name"
                 ref={name_input_ref}
+                onblur={onblur.clone()}
                 placeholder="Name"
                 autocapitalize="on"
-                onblur={onblur.clone()}
+                tabindex="1"
             />
             <span class="debt-input--dollar">{"$"}</span>
             <input
                 class="debt-input--value"
                 ref={value_input_ref}
+                onblur={onblur.clone()}
                 placeholder="0.00"
                 inputmode="decimal"
-                onblur={onblur.clone()}
+                tabindex="1"
             />
             <button hidden={true} /> // Hidden button to allow form submit.
         </form>

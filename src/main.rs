@@ -113,14 +113,19 @@ fn app() -> Html {
                         html! {
                             <div class="entry" key={entry.id}>
                                 <DebtInput id={entry.id} onedit={on_edit(i)} />
-                                <button onclick={on_remove(i)}>{"X"}</button>
+                                <button
+                                    onclick={on_remove(i)}
+                                    tabindex="0"
+                                >
+                                    {"X"}
+                                </button>
                             </div>
                         }
                     })
                     .collect::<Html>()
                 }
             </div>
-            <button onclick={on_add}>{"Add person"}</button>
+            <button onclick={on_add} tabindex="2">{"Add person"}</button>
             <div class="partitionings">
                 {html! {
                     if let Some(transactions) = transaction_partitioning {
