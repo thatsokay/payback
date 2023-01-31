@@ -75,7 +75,7 @@ pub fn debt_input(props: &DebtInputProps) -> Html {
                 autocapitalize="on"
                 onblur={onblur.clone()}
             />
-            <span>{"$"}</span>
+            <span class="debt-input--dollar">{"$"}</span>
             <input
                 class="debt-input--value"
                 ref={value_input_ref}

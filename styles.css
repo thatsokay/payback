@@ -1,6 +1,10 @@
 .entries {
+  max-width: 30rem;
+  margin-bottom: 0.5rem;
   display: grid;
-  grid-template-columns: repeat(4, auto);
+  grid-template-columns: 3fr min-content minmax(8rem, 2fr) min-content;
+  row-gap: 0.25rem;
+  column-gap: 0.125rem;
 }
 
 .value-label {
@@ -13,6 +17,14 @@
 
 .debt-input {
   display: contents;
+}
+
+.debt-input--name {
+  margin-right: 1rem;
+}
+
+.debt-input--dollar {
+  text-align: right;
 }
 
 .debt-input--value {
