@@ -26,7 +26,7 @@ fn app() -> Html {
     let state = use_reducer(State::new);
     let transaction_partitioning_index = use_state(|| 0);
 
-    let on_edit = {
+    let on_edit_entry = {
         let state = state.clone();
         move |i: usize| {
             let state = state.clone();
@@ -36,7 +36,7 @@ fn app() -> Html {
         }
     };
 
-    let on_remove = {
+    let on_remove_entry = {
         let state = state.clone();
         move |i: usize| {
             let state = state.clone();
@@ -44,7 +44,7 @@ fn app() -> Html {
         }
     };
 
-    let on_add = {
+    let on_add_entry = {
         let state = state.clone();
         Callback::from(move |_| state.dispatch(Action::Add))
     };
@@ -99,69 +99,77 @@ fn app() -> Html {
     };
 
     html! {
-        <div>
-            <div class="entries">
-                <label class="name-label">{"Name"}</label>
-                <div></div>
-                <label class="value-label">{"Amount owed"}</label>
-                <div></div>
-                {state
-                    .entries
-                    .iter()
-                    .enumerate()
-                    .map(|(i, entry)| {
-                        html! {
-                            <div class="entry" key={entry.id}>
-                                <DebtInput id={entry.id} onedit={on_edit(i)} />
+        <div class="margin">
+            <div class="content">
+                <div class="entries">
+                    <label class="name-label">{"Name"}</label>
+                    <div></div>
+                    <label class="value-label">{"Amount owed"}</label>
+                    <div></div>
+                    {state
+                        .entries
+                        .iter()
+                        .enumerate()
+                        .map(|(i, entry)| {
+                            html! {
+                                <div class="entry" key={entry.id}>
+                                    <DebtInput id={entry.id} onedit={on_edit_entry(i)} />
+                                    <button
+                                        onclick={on_remove_entry(i)}
+                                        tabindex="0"
+                                    >
+                                        {"X"}
+                                    </button>
+                                </div>
+                            }
+                        })
+                        .collect::<Html>()
+                    }
+                    <button
+                        class="add-entry"
+                        onclick={on_add_entry}
+                        tabindex="2"
+                    >
+                        {"Add person"}
+                    </button>
+                </div>
+                <div class="partitionings">
+                    {html! {
+                        if let Some(transactions) = transaction_partitioning {
+                            if transaction_partitionings.len() > 1 {
                                 <button
-                                    onclick={on_remove(i)}
-                                    tabindex="0"
+                                    onclick={on_decrement_transaction_partitioning_index}
                                 >
-                                    {"X"}
+                                    {"<"}
                                 </button>
+                                <button
+                                    onclick={on_increment_transaction_partitioning_index}
+                                >
+                                    {">"}
+                                </button>
+                            }
+                            <div class="transactions">
+                                {transactions
+                                    .iter()
+                                    .map(|transaction| {
+                                        html! {
+                                            <div class="transaction">
+                                                {format!(
+                                                    "{} pays ${}.{:02} to {}",
+                                                    transaction.source,
+                                                    transaction.value / 100,
+                                                    transaction.value % 100,
+                                                    transaction.destination,
+                                                )}
+                                            </div>
+                                        }
+                                    })
+                                    .collect::<Html>()
+                                }
                             </div>
                         }
-                    })
-                    .collect::<Html>()
-                }
-            </div>
-            <button onclick={on_add} tabindex="2">{"Add person"}</button>
-            <div class="partitionings">
-                {html! {
-                    if let Some(transactions) = transaction_partitioning {
-                        if transaction_partitionings.len() > 1 {
-                            <button
-                                onclick={on_decrement_transaction_partitioning_index}
-                            >
-                                {"<"}
-                            </button>
-                            <button
-                                onclick={on_increment_transaction_partitioning_index}
-                            >
-                                {">"}
-                            </button>
-                        }
-                        <div class="transactions">
-                            {transactions
-                                .iter()
-                                .map(|transaction| {
-                                    html! {
-                                        <div class="transaction">
-                                            {format!(
-                                                "{} pays ${}.{:02} to {}",
-                                                transaction.source,
-                                                transaction.value / 100,
-                                                transaction.value % 100,
-                                                transaction.destination,
-                                            )}
-                                        </div>
-                                    }
-                                })
-                                .collect::<Html>()
-                            }
-                        </div>
-                    }
-                }}
+                    }}
+                </div>
             </div>
         </div>
     }
