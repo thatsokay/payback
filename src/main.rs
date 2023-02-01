@@ -118,7 +118,7 @@ fn app() -> Html {
                                         onclick={on_remove_entry(i)}
                                         tabindex="0"
                                     >
-                                        {"X"}
+                                        {"☓"}
                                     </button>
                                 </div>
                             }
@@ -133,21 +133,26 @@ fn app() -> Html {
                         {"Add person"}
                     </button>
                 </div>
-                <div class="partitionings">
-                    {html! {
-                        if let Some(transactions) = transaction_partitioning {
-                            if transaction_partitionings.len() > 1 {
-                                <button
-                                    onclick={on_decrement_transaction_partitioning_index}
-                                >
-                                    {"<"}
-                                </button>
-                                <button
-                                    onclick={on_increment_transaction_partitioning_index}
-                                >
-                                    {">"}
-                                </button>
-                            }
+                {html! {
+                    if let Some(transactions) = transaction_partitioning {
+                        if !transactions.is_empty() {
+                            <div class="output-actions">
+                                <button class="output-actions--copy">{"Copy"}</button>
+                                if transaction_partitionings.len() > 1 {
+                                    <div>
+                                        <button
+                                            onclick={on_decrement_transaction_partitioning_index}
+                                        >
+                                            {"<"}
+                                        </button>
+                                        <button
+                                            onclick={on_increment_transaction_partitioning_index}
+                                        >
+                                            {">"}
+                                        </button>
+                                    </div>
+                                }
+                            </div>
                             <div class="transactions">
                                 {transactions
                                     .iter()
@@ -168,8 +173,8 @@ fn app() -> Html {
                                 }
                             </div>
                         }
-                    }}
-                </div>
+                    }
+                }}
             </div>
         </div>
     }

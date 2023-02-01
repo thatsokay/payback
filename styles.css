@@ -11,7 +11,7 @@
 }
 
 .entries {
-  margin-bottom: 0.5rem;
+  margin-bottom: 2rem;
   display: grid;
   grid-template-columns: 3fr min-content minmax(8rem, 2fr) min-content;
   row-gap: 0.25rem;
@@ -54,4 +54,17 @@
 .add-entry {
   grid-column: 1 / span 4;
   justify-self: start;
+}
+
+.output-actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+.transactions {
+  margin: 0.25rem 0;
+  padding: 0.5rem;
+  background-color: ghostwhite;
+  border-width: 1px;
+  border-style: solid;
 }
