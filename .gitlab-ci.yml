@@ -1,0 +1,22 @@
+image: rustlang/rust:nightly-bullseye
+
+cache:
+  paths:
+    - target
+
+before_script:
+  - rustup target add wasm32-unknown-unknown
+  - wget -qO- https://github.com/thedodd/trunk/releases/download/v0.16.0/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
+
+pages:
+  stage: deploy
+  script:
+    - ./trunk build --release --dist public
+    # https://github.com/thedodd/trunk/pull/361#issuecomment-1308487648
+    - sed -i "s@'/@'./@g" public/index.html
+    - sed -i 's@"/@"./@g' public/index.html
+  artifacts:
+    paths:
+      - public
+  only:
+    - master
