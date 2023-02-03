@@ -61,6 +61,14 @@
   justify-content: space-between;
 }
 
+.output-actions--pagination {
+  display: flex;
+}
+
+.output-actions--pagination > * + * {
+  margin-left: 0.25rem;
+}
+
 .transactions {
   margin: 0.25rem 0;
   padding: 0.5rem;

@@ -139,12 +139,19 @@ fn app() -> Html {
                             <div class="output-actions">
                                 <button class="output-actions--copy">{"Copy"}</button>
                                 if transaction_partitionings.len() > 1 {
-                                    <div>
+                                    <div class="output-actions--pagination">
                                         <button
                                             onclick={on_decrement_transaction_partitioning_index}
                                         >
                                             {"<"}
                                         </button>
+                                        <div>
+                                            {format!(
+                                                "{}/{}",
+                                                *transaction_partitioning_index + 1,
+                                                transaction_partitionings.len()
+                                            )}
+                                        </div>
                                         <button
                                             onclick={on_increment_transaction_partitioning_index}
                                         >
