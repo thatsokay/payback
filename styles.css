@@ -10,6 +10,33 @@
   max-width: 100%;
 }
 
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.help {
+  font-size: 0.75rem;
+}
+
+.help-text {
+  margin: 1rem 0;
+  background-color: #f5f5f5;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.help-text > p {
+  margin: 0.5rem;
+}
+
 .entries {
   margin-bottom: 2rem;
   display: grid;
@@ -70,9 +97,9 @@
 }
 
 .transactions {
-  margin: 0.25rem 0;
+  margin-top: 0.25rem;
   padding: 0.5rem;
-  background-color: ghostwhite;
+  background-color: #f5f5f5;
   border-width: 1px;
   border-style: solid;
 }

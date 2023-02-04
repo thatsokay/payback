@@ -27,6 +27,12 @@ fn main() {
 fn app() -> Html {
     let state = use_reducer(State::new);
     let transaction_partitioning_index = use_state(|| 0);
+    let show_help_text = use_state(|| false);
+
+    let on_toggle_help_text = {
+        let show_help_text = show_help_text.clone();
+        move |_| show_help_text.set(!*show_help_text)
+    };
 
     let on_edit_entry = {
         let state = state.clone();
@@ -126,6 +132,36 @@ fn app() -> Html {
     html! {
         <div class="margin">
             <div class="content">
+                <div class="header">
+                    <h1 class="title">{"Payback"}</h1>
+                    <a
+                        class="help"
+                        href="javascript:void(0)"
+                        onclick={on_toggle_help_text}
+                    >
+                        {"Help "}{if *show_help_text { "▴" } else { "▾" }}
+                    </a>
+                </div>
+                {html! {
+                    if *show_help_text {
+                        <div class="help-text">
+                            <p>
+                                {
+                                    "Enter everyone's names and the amount \
+                                    they are owed (positive if they are owed \
+                                    money, negative if they owe money)."
+                                }
+                            </p>
+                            <p>
+                                {
+                                    "Once all the debts sum to zero, the \
+                                    transactions required to settle everyone's \
+                                    debts will be displayed below."
+                                }
+                            </p>
+                        </div>
+                    }
+                }}
                 <div class="entries">
                     <label class="name-label">{"Name"}</label>
                     <div></div>
