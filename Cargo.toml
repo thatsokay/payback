@@ -15,4 +15,7 @@ console_log = { version = "0.2", features = ["color"] }
 version = "0.3"
 features = [
     "HtmlInputElement",
+    "Window",
+    "Navigator",
+    "Clipboard",
 ]

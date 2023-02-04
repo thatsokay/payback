@@ -1,5 +1,8 @@
 image: rustlang/rust:nightly-bullseye
 
+variables:
+  RUSTFLAGS: --cfg=web_sys_unstable_apis
+
 cache:
   paths:
     - target

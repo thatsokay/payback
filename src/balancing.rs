@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::fmt;
 
 use crate::debt::Debt;
 
@@ -16,6 +17,19 @@ impl Transaction {
             destination: destination.to_string(),
             value,
         }
+    }
+}
+
+impl fmt::Display for Transaction {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} pays ${}.{:02} to {}",
+            self.source,
+            self.value / 100,
+            self.value % 100,
+            self.destination,
+        )
     }
 }
 

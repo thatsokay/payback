@@ -9,6 +9,8 @@ mod state;
 
 use console_log;
 use log::Level;
+use std::rc::Rc;
+use web_sys::window;
 use yew::prelude::*;
 
 use balancing::balance_by_debted_amounts_asc;
@@ -40,13 +42,13 @@ fn app() -> Html {
         let state = state.clone();
         move |i: usize| {
             let state = state.clone();
-            Callback::from(move |_| state.dispatch(Action::Remove(i)))
+            move |_| state.dispatch(Action::Remove(i))
         }
     };
 
     let on_add_entry = {
         let state = state.clone();
-        Callback::from(move |_| state.dispatch(Action::Add))
+        move |_| state.dispatch(Action::Add)
     };
 
     let transaction_partitionings = use_memo(
@@ -68,16 +70,38 @@ fn app() -> Html {
         },
         state.entries.clone(),
     );
-    let transaction_partitioning = transaction_partitionings.get(*transaction_partitioning_index);
+
+    let transactions = transaction_partitionings
+        .get(*transaction_partitioning_index)
+        .unwrap_or(&vec![])
+        .clone();
 
     {
         let transaction_partitioning_index = transaction_partitioning_index.clone();
-        let transaction_partitionings = transaction_partitionings.clone();
+        let transaction_partitionings = Rc::clone(&transaction_partitionings);
         use_effect_with_deps(
             move |_| transaction_partitioning_index.set(0),
             transaction_partitionings,
         );
     }
+
+    let on_copy_transactions = {
+        let transactions = transactions.clone();
+        move |_| {
+            if !transactions.is_empty() {
+                let clipboard = window()
+                    .and_then(|window| window.navigator().clipboard())
+                    .expect("Cannot access clipboard API");
+                clipboard.write_text(
+                    &(transactions
+                        .iter()
+                        .map(|transaction| transaction.to_string())
+                        .collect::<Vec<_>>()
+                        .join("\n")),
+                );
+            }
+        }
+    };
 
     let on_decrement_transaction_partitioning_index = {
         let transaction_partitioning_index = transaction_partitioning_index.clone();
@@ -90,9 +114,9 @@ fn app() -> Html {
 
     let on_increment_transaction_partitioning_index = {
         let transaction_partitioning_index = transaction_partitioning_index.clone();
-        let transaction_partitionings = transaction_partitionings.clone();
+        let partitionings_len = transaction_partitionings.len();
         move |_| {
-            if *transaction_partitioning_index < transaction_partitionings.len() - 1 {
+            if *transaction_partitioning_index < partitionings_len - 1 {
                 transaction_partitioning_index.set(*transaction_partitioning_index + 1);
             }
         }
@@ -134,52 +158,49 @@ fn app() -> Html {
                     </button>
                 </div>
                 {html! {
-                    if let Some(transactions) = transaction_partitioning {
-                        if !transactions.is_empty() {
-                            <div class="output-actions">
-                                <button class="output-actions--copy">{"Copy"}</button>
-                                if transaction_partitionings.len() > 1 {
-                                    <div class="output-actions--pagination">
-                                        <button
-                                            onclick={on_decrement_transaction_partitioning_index}
-                                        >
-                                            {"<"}
-                                        </button>
-                                        <div>
-                                            {format!(
-                                                "{}/{}",
-                                                *transaction_partitioning_index + 1,
-                                                transaction_partitionings.len()
-                                            )}
-                                        </div>
-                                        <button
-                                            onclick={on_increment_transaction_partitioning_index}
-                                        >
-                                            {">"}
-                                        </button>
+                    if !transactions.is_empty() {
+                        <div class="output-actions">
+                            <button
+                                class="output-actions--copy"
+                                onclick={on_copy_transactions}
+                            >
+                                {"Copy"}
+                            </button>
+                            if transaction_partitionings.len() > 1 {
+                                <div class="output-actions--pagination">
+                                    <button
+                                        onclick={on_decrement_transaction_partitioning_index}
+                                    >
+                                        {"<"}
+                                    </button>
+                                    <div>
+                                        {format!(
+                                            "{}/{}",
+                                            *transaction_partitioning_index + 1,
+                                            transaction_partitionings.len()
+                                        )}
                                     </div>
-                                }
-                            </div>
-                            <div class="transactions">
-                                {transactions
-                                    .iter()
-                                    .map(|transaction| {
-                                        html! {
-                                            <div class="transaction">
-                                                {format!(
-                                                    "{} pays ${}.{:02} to {}",
-                                                    transaction.source,
-                                                    transaction.value / 100,
-                                                    transaction.value % 100,
-                                                    transaction.destination,
-                                                )}
-                                            </div>
-                                        }
-                                    })
-                                    .collect::<Html>()
-                                }
-                            </div>
-                        }
+                                    <button
+                                        onclick={on_increment_transaction_partitioning_index}
+                                    >
+                                        {">"}
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                        <div class="transactions">
+                            {transactions
+                                .iter()
+                                .map(|transaction| {
+                                    html! {
+                                        <div class="transaction">
+                                            {transaction}
+                                        </div>
+                                    }
+                                })
+                                .collect::<Html>()
+                            }
+                        </div>
                     }
                 }}
             </div>
