@@ -87,20 +87,21 @@ fn app() -> Html {
 
     let on_copy_transactions = {
         let transactions = transactions.clone();
-        move |_| {
-            if !transactions.is_empty() {
-                let clipboard = window()
-                    .and_then(|window| window.navigator().clipboard())
-                    .expect("Cannot access clipboard API");
-                clipboard.write_text(
-                    &(transactions
-                        .iter()
-                        .map(|transaction| transaction.to_string())
-                        .collect::<Vec<_>>()
-                        .join("\n")),
-                );
-            }
-        }
+        window()
+            .and_then(|window| window.navigator().clipboard())
+            .and_then(|clipboard| {
+                Some(move |_| {
+                    if !transactions.is_empty() {
+                        clipboard.write_text(
+                            &(transactions
+                                .iter()
+                                .map(|transaction| transaction.to_string())
+                                .collect::<Vec<_>>()
+                                .join("\n")),
+                        );
+                    }
+                })
+            })
     };
 
     let on_decrement_transaction_partitioning_index = {
@@ -160,12 +161,17 @@ fn app() -> Html {
                 {html! {
                     if !transactions.is_empty() {
                         <div class="output-actions">
-                            <button
-                                class="output-actions--copy"
-                                onclick={on_copy_transactions}
-                            >
-                                {"Copy"}
-                            </button>
+                            {match on_copy_transactions {
+                                Some(onclick) => html! {
+                                    <button
+                                        class="output-actions--copy"
+                                        {onclick}
+                                    >
+                                        {"Copy"}
+                                    </button>
+                                },
+                                None => html! { <div></div> }
+                            }}
                             if transaction_partitionings.len() > 1 {
                                 <div class="output-actions--pagination">
                                     <button
