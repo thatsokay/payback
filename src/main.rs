@@ -14,9 +14,9 @@ use web_sys::window;
 use yew::prelude::*;
 
 use balancing::balance_by_debted_amounts_asc;
-use components::debt_input::DebtInput;
+use components::entries::Entries;
 use partitionings::longest_zero_sum_partitionings;
-use state::{Action, State};
+use state::State;
 
 fn main() {
     console_log::init_with_level(Level::Debug).expect("error initialising logger");
@@ -32,29 +32,6 @@ fn app() -> Html {
     let on_toggle_help_text = {
         let show_help_text = show_help_text.clone();
         move |_| show_help_text.set(!*show_help_text)
-    };
-
-    let on_edit_entry = {
-        let state = state.clone();
-        move |i: usize| {
-            let state = state.clone();
-            Callback::from(move |(name, value): (String, i32)| {
-                state.dispatch(Action::Edit((i, name, value)))
-            })
-        }
-    };
-
-    let on_remove_entry = {
-        let state = state.clone();
-        move |i: usize| {
-            let state = state.clone();
-            move |_| state.dispatch(Action::Remove(i))
-        }
-    };
-
-    let on_add_entry = {
-        let state = state.clone();
-        move |_| state.dispatch(Action::Add)
     };
 
     let transaction_partitionings = use_memo(
@@ -95,8 +72,8 @@ fn app() -> Html {
         let transactions = transactions.clone();
         window()
             .and_then(|window| window.navigator().clipboard())
-            .and_then(|clipboard| {
-                Some(move |_| {
+            .map(|clipboard| {
+                move |_| {
                     if !transactions.is_empty() {
                         clipboard.write_text(
                             &(transactions
@@ -106,7 +83,7 @@ fn app() -> Html {
                                 .join("\n")),
                         );
                     }
-                })
+                }
             })
     };
 
@@ -162,38 +139,7 @@ fn app() -> Html {
                         </div>
                     }
                 }}
-                <div class="entries">
-                    <label class="name-label">{"Name"}</label>
-                    <div></div>
-                    <label class="value-label">{"Amount owed"}</label>
-                    <div></div>
-                    {state
-                        .entries
-                        .iter()
-                        .enumerate()
-                        .map(|(i, entry)| {
-                            html! {
-                                <div class="entry" key={entry.id}>
-                                    <DebtInput id={entry.id} onedit={on_edit_entry(i)} />
-                                    <button
-                                        onclick={on_remove_entry(i)}
-                                        tabindex="0"
-                                    >
-                                        {"☓"}
-                                    </button>
-                                </div>
-                            }
-                        })
-                        .collect::<Html>()
-                    }
-                    <button
-                        class="add-entry"
-                        onclick={on_add_entry}
-                        tabindex="2"
-                    >
-                        {"Add person"}
-                    </button>
-                </div>
+                <Entries {state} />
                 {html! {
                     if !transactions.is_empty() {
                         <div class="output-actions">
