@@ -43,6 +43,7 @@
   grid-template-columns: 3fr min-content minmax(8rem, 2fr) min-content;
   row-gap: 0.25rem;
   column-gap: 0.125rem;
+  align-items: center;
 }
 
 .name-label {
@@ -90,6 +91,7 @@
 
 .output-actions--pagination {
   display: flex;
+  align-items: center;
 }
 
 .output-actions--pagination > * + * {
@@ -98,8 +100,12 @@
 
 .transactions {
   margin-top: 0.25rem;
-  padding: 0.5rem;
+  padding: 0.25rem 0.5rem;
   background-color: #f5f5f5;
   border-width: 1px;
   border-style: solid;
+}
+
+.transaction {
+  margin: 0.25rem 0;
 }
