@@ -1,5 +1,12 @@
 use std::iter::Sum;
 
+/// Given a collection of summable items, returns a collection of partitionings
+/// with the maximum number of partitions such that each partition sums to zero.
+///
+/// A partition being a subset of items from the given set.
+///
+/// A partitioning being a collection of disjoint partitions such that their
+/// union is the given set.
 pub fn longest_zero_sum_partitionings<'a, T>(set: &'a [T]) -> Vec<Vec<Vec<&'a T>>>
 where
     i32: Sum<&'a T>,
@@ -7,6 +14,9 @@ where
     if set.is_empty() {
         return vec![vec![]];
     }
+
+    // Collection of bit strings with each bit corresponding to an item in the
+    // given set. 1 means the item is in the set and 0 means it isn't.
     let mut subset_bit_strings: Vec<_> = (1..2_u64.pow(set.len() as u32)).collect();
     subset_bit_strings.sort_by_key(|item| item.count_zeros());
     let mut zero_sum_subset_bit_strings = vec![];
@@ -28,6 +38,9 @@ where
         return vec![];
     }
     let set_bit_string = 2_u64.pow(set.len() as u32) - 1;
+    // Collection of bit strings with each bit corresponding to an item in
+    // `zero_sum_subset_bit_strings`. 1 means the item is in the set and 0 means
+    // it isn't.
     let mut subset_set_bit_strings: Vec<_> =
         (1..2_u64.pow(zero_sum_subset_bit_strings.len() as u32)).collect();
     subset_set_bit_strings.sort_by_key(|item| item.count_zeros());

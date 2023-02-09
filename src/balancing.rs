@@ -33,6 +33,8 @@ impl fmt::Display for Transaction {
     }
 }
 
+/// Creates transactions from the most debted to the most credited until all
+/// debts have been settled.
 pub fn balance_by_debted_amounts_desc(debts: &[&Debt]) -> Vec<Transaction> {
     let mut debtors = vec![];
     let mut creditors = vec![];
@@ -80,6 +82,8 @@ pub fn balance_by_debted_amounts_desc(debts: &[&Debt]) -> Vec<Transaction> {
     transactions
 }
 
+/// Creates transactions from the most debted to the least credited until all
+/// debts have been settled.
 pub fn balance_by_debted_amounts_asc(debts: &[&Debt]) -> Vec<Transaction> {
     let mut debtors = vec![];
     let mut creditors = vec![];
@@ -126,6 +130,8 @@ pub fn balance_by_debted_amounts_asc(debts: &[&Debt]) -> Vec<Transaction> {
     transactions
 }
 
+/// Creates transactions from all debtors to a single person (the hub), then
+/// from that person to all creditors.
 pub fn balance_by_spoke_hub(debts: &[&Debt], hub_index: usize) -> Vec<Transaction> {
     let hub = debts[hub_index];
     debts[..hub_index]
