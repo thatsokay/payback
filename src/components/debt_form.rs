@@ -2,6 +2,8 @@ use std::num::ParseFloatError;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
+/// Parses a string representing a dollar value and returns the value in cents,
+/// and a formatted string representation of it.
 fn parse_and_format_dollar_value(dollars: &str) -> Result<(i32, String), ParseFloatError> {
     let parsed = dollars.parse::<f64>()?;
     let cents = (parsed * 100.0).round() as i32;
@@ -15,13 +17,14 @@ fn parse_and_format_dollar_value(dollars: &str) -> Result<(i32, String), ParseFl
 }
 
 #[derive(Clone, PartialEq, Properties)]
-pub struct DebtInputProps {
+pub struct DebtFormProps {
     pub id: usize,
     pub onedit: Callback<(String, i32)>,
 }
 
-#[function_component(DebtInput)]
-pub fn debt_input(props: &DebtInputProps) -> Html {
+/// Form for editing the name and value of a debt.
+#[function_component(DebtForm)]
+pub fn debt_form(props: &DebtFormProps) -> Html {
     let name_input_ref = use_node_ref();
     let value_input_ref = use_node_ref();
 

@@ -1,6 +1,6 @@
 use yew::prelude::*;
 
-use crate::components::debt_input::DebtInput;
+use crate::components::debt_form::DebtForm;
 use crate::state::{Action, State};
 
 #[derive(Clone, PartialEq, Properties)]
@@ -8,6 +8,7 @@ pub struct EntriesProps {
     pub state: UseReducerHandle<State>,
 }
 
+/// List of form items for manipulating the state entries
 #[function_component(Entries)]
 pub fn entries(props: &EntriesProps) -> Html {
     let on_edit_entry = {
@@ -47,7 +48,7 @@ pub fn entries(props: &EntriesProps) -> Html {
                 .map(|(i, entry)| {
                     html! {
                         <div class="entry" key={entry.id}>
-                            <DebtInput id={entry.id} onedit={on_edit_entry(i)} />
+                            <DebtForm id={entry.id} onedit={on_edit_entry(i)} />
                             <button
                                 onclick={on_remove_entry(i)}
                                 tabindex="0"

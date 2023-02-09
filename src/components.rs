@@ -1,2 +1,2 @@
-pub mod debt_input;
+pub mod debt_form;
 pub mod entries;
